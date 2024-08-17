@@ -1,0 +1,294 @@
+local adminUserId = 12345678  -- Replace with your user ID
+
+-- Define a table to hold the command functions
+local commands = {}
+
+-- Register a command with a handler function
+local function registerCommand(commandName, handler)
+    commands[commandName:lower()] = handler
+end
+
+-- Add your command definitions
+
+-- Fly Command
+registerCommand("fly", function(player)
+    local character = player.Character
+    if character and not character:FindFirstChild("Flying") then
+        local flying = Instance.new("BodyVelocity")
+        flying.Velocity = Vector3.new(0, 50, 0)
+        flying.MaxForce = Vector3.new(0, math.huge, 0)
+        flying.Name = "Flying"
+        flying.Parent = character.HumanoidRootPart
+
+        -- Add a key binding to stop flying
+        local userInput = game:GetService("UserInputService")
+        userInput.InputBegan:Connect(function(input)
+            if input.KeyCode == Enum.KeyCode.X then
+                if character:FindFirstChild("Flying") then
+                    character.Flying:Destroy()
+                end
+            end
+        end)
+    end
+end)
+
+-- Unfly Command
+registerCommand("unfly", function(player)
+    local character = player.Character
+    if character and character:FindFirstChild("Flying") then
+        character.Flying:Destroy()
+    end
+end)
+
+-- Speed Command
+registerCommand("speed", function(player)
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = 100
+    end
+end)
+
+-- Unspeed Command
+registerCommand("unspeed", function(player)
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.WalkSpeed = 16
+    end
+end)
+
+-- Invisible Command
+registerCommand("invisible", function(player)
+    local character = player.Character
+    if character then
+        for _, part in pairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 1
+            elseif part:IsA("Decal") then
+                part.Transparency = 1
+            end
+        end
+    end
+end)
+
+-- Visible Command
+registerCommand("visible", function(player)
+    local character = player.Character
+    if character then
+        for _, part in pairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.Transparency = 0
+            elseif part:IsA("Decal") then
+                part.Transparency = 0
+            end
+        end
+    end
+end)
+
+-- Teleport Command
+registerCommand("teleport", function(player, args)
+    local targetName = args[1]
+    local targetPlayer = game.Players:FindFirstChild(targetName)
+    if targetPlayer and targetPlayer.Character and player.Character then
+        player.Character.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+    end
+end)
+
+-- Give Item Command
+registerCommand("giveitem", function(player, args)
+    local itemName = args[1]
+    local tool = game.ServerStorage:FindFirstChild(itemName)
+    if tool then
+        local clonedTool = tool:Clone()
+        clonedTool.Parent = player.Backpack
+    end
+end)
+
+-- Kill Command
+registerCommand("kill", function(player)
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.Health = 0
+    end
+end)
+
+-- Heal Command
+registerCommand("heal", function(player)
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    if humanoid then
+        humanoid.Health = humanoid.MaxHealth
+    end
+end)
+
+-- Jump Power Command
+registerCommand("jumppower", function(player, args)
+    local power = tonumber(args[1])
+    local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+    if humanoid and power then
+        humanoid.JumpPower = power
+    end
+end)
+
+-- Gravity Command
+registerCommand("gravity", function(_, args)
+    local gravity = tonumber(args[1])
+    if gravity then
+        game.Workspace.Gravity = gravity
+    end
+end)
+
+-- Set Time Command
+registerCommand("time", function(_, args)
+    local hour = tonumber(args[1])
+    if hour then
+        game:GetService("Lighting").ClockTime = hour
+    end
+end)
+
+-- Weather Commands
+registerCommand("night", function()
+    game:GetService("Lighting").ClockTime = 0
+end)
+
+registerCommand("day", function()
+    game:GetService("Lighting").ClockTime = 14
+end)
+
+registerCommand("storm", function()
+    local lighting = game:GetService("Lighting")
+    lighting.ClockTime = 0
+    lighting.FogEnd = 200
+    lighting.Brightness = 0
+end)
+
+registerCommand("clearweather", function()
+    local lighting = game:GetService("Lighting")
+    lighting.FogEnd = 100000
+    lighting.Brightness = 2
+end)
+
+-- Clone Character Command
+registerCommand("clone", function(player)
+    local character = player.Character
+    if character then
+        local clone = character:Clone()
+        clone:SetPrimaryPartCFrame(character.HumanoidRootPart.CFrame * CFrame.new(5, 0, 0))
+        clone.Parent = game.Workspace
+    end
+end)
+
+-- Freeze Command
+registerCommand("freeze", function(player)
+    local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if rootPart then
+        local bodyPosition = Instance.new("BodyPosition")
+        bodyPosition.Position = rootPart.Position
+        bodyPosition.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bodyPosition.Parent = rootPart
+    end
+end)
+
+-- Unfreeze Command
+registerCommand("unfreeze", function(player)
+    local rootPart = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+    if rootPart and rootPart:FindFirstChildOfClass("BodyPosition") then
+        rootPart:FindFirstChildOfClass("BodyPosition"):Destroy()
+    end
+end)
+
+-- Kick Player Command
+registerCommand("kick", function(_, args)
+    local targetName = args[1]
+    local targetPlayer = game.Players:FindFirstChild(targetName)
+    if targetPlayer then
+        targetPlayer:Kick("You have been kicked by an admin.")
+    end
+end)
+
+-- Ban Player Command
+registerCommand("ban", function(_, args)
+    local targetName = args[1]
+    local targetPlayer = game.Players:FindFirstChild(targetName)
+    if targetPlayer then
+        -- Add to ban list
+        local banList = game.ServerStorage:FindFirstChild("BanList")
+        if not banList then
+            banList = Instance.new("Folder")
+            banList.Name = "BanList"
+            banList.Parent = game.ServerStorage
+        end
+        local banEntry = Instance.new("StringValue")
+        banEntry.Name = targetPlayer.Name
+        banEntry.Parent = banList
+        targetPlayer:Kick("You have been banned by an admin.")
+    end
+end)
+
+-- Unban Player Command
+registerCommand("unban", function(_, args)
+    local targetName = args[1]
+    local banList = game.ServerStorage:FindFirstChild("BanList")
+    if banList and banList:FindFirstChild(targetName) then
+        banList:FindFirstChild(targetName):Destroy()
+    end
+end)
+
+-- TP All to Admin Command
+registerCommand("bringall", function(player)
+    for _, targetPlayer in pairs(game.Players:GetPlayers()) do
+        if targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            targetPlayer.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame + Vector3.new(math.random(-5, 5), 0, math.random(-5, 5))
+        end
+    end
+end)
+
+-- NoClip Command
+registerCommand("noclip", function(player)
+    local character = player.Character
+    if character then
+        local function noclip()
+            for _, part in pairs(character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+        noclip()
+        game:GetService("RunService").Stepped:Connect(noclip)
+    end
+end)
+
+-- Clip Command
+registerCommand("clip", function(player)
+    local character = player.Character
+    if character then
+        for _, part in pairs(character:GetChildren()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+end)
+
+-- Flashlight Command
+registerCommand("flashlight", function(player)
+    local flashlight = Instance.new("PointLight")
+    flashlight.Brightness = 2
+    flashlight.Range = 16
+    flashlight.Parent = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+end)
+
+-- Handle player chat for commands
+game.Players.PlayerAdded:Connect(function(player)
+    if player.UserId == adminUserId then
+        player.Chatted:Connect(function(message)
+            local args = message:split(" ")
+            local commandName = args[1]:lower()
+            table.remove(args, 1) -- Remove the command name from arguments
+
+            local commandHandler = commands[commandName]
+            if commandHandler then
+                commandHandler(player, args)
+            end
+        end)
+    end
+end)
